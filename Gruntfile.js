@@ -447,7 +447,7 @@ module.exports = function (grunt) {
 
 		switch (target) {
 		case 'phonegap':
-			grunt.task.run(['string-replace:phonegap']);
+			grunt.task.run(phonegap);
 			break;
 		case 'cordova':
 			phonegap.push('shell:phonegapBuild');
