@@ -22,7 +22,8 @@ module.exports = function (grunt) {
     yeoman: {
       // configurable paths
       app: require('./bower.json').appPath || 'app',
-      dist: 'dist'
+      dist: 'dist',
+			phonegap: 'www'
     },
 
     // Watches files for changes and runs tasks based on the changed files
@@ -90,6 +91,41 @@ module.exports = function (grunt) {
         }
       }
     },
+		shell: {
+			phonegapBuild: {
+				command: 'cordova build'
+			}
+		},
+
+		compress: {
+			phonegap: {
+				options: {
+					archive: 'build.phonegap.zip'
+				},
+				files: [
+					{
+						src: ['<%= yeoman.phonegap %>/*'],
+						dest: ''
+					}
+				]
+			}
+		},
+
+		'string-replace': {
+			phonegap: {
+				options: {
+					replacements: [
+						{
+							pattern: /<!--phonegap:(.*?.js)-->/gi,
+							replacement: '<script src="$1"></script>'
+						}
+					]
+				},
+				files: {
+					'<%= yeoman.phonegap %>/': '<%= yeoman.phonegap %>/index.html'
+				}
+			}
+		},
 
     // Make sure code styles are up to par and there are no obvious mistakes
     jshint: {
@@ -121,6 +157,7 @@ module.exports = function (grunt) {
           ]
         }]
       },
+			phonegap: ['<%= yeoman.phonegap %>/*', '!<%= yeoman.phonegap %>/config.xml', '!<%= yeoman.phonegap %>/res'],
       server: '.tmp'
     },
 
@@ -294,6 +331,12 @@ module.exports = function (grunt) {
           src: ['generated/*']
         }]
       },
+			phonegap: {
+				expand: true,
+				cwd: '<%= yeoman.dist %>',
+				dest: '<%= yeoman.phonegap %>',
+				src: '**'
+			},
       styles: {
         expand: true,
         cwd: '<%= yeoman.app %>/styles',
@@ -381,22 +424,60 @@ module.exports = function (grunt) {
     'karma'
   ]);
 
-  grunt.registerTask('build', [
-    'clean:dist',
-    'bower-install',
-    'useminPrepare',
-    'concurrent:dist',
-    'autoprefixer',
-    'concat',
-    'ngmin',
-    'copy:dist',
-    'cdnify',
-    'cssmin',
-    'uglify',
-    'rev',
-    'usemin',
-    'htmlmin'
-  ]);
+	grunt.registerTask('build', function (target) {
+		target = target || 'dev';
+		var phonegap = [
+			'clean:phonegap',
+			'clean:dist',
+			'bower-install',
+			'useminPrepare',
+			'concurrent:dist',
+			'autoprefixer',
+			'concat',
+			'ngmin',
+			'copy:dist',
+			'cssmin',
+			'uglify',
+			'rev',
+			'usemin',
+			'htmlmin',
+			'copy:phonegap',
+			'string-replace:phonegap'
+		];
+
+		switch (target) {
+		case 'phonegap':
+			grunt.task.run(['string-replace:phonegap']);
+			break;
+		case 'cordova':
+			phonegap.push('shell:phonegapBuild');
+			grunt.task.run(phonegap);
+			break;
+		case 'adobe':
+			phonegap.push('compress:phonegap');
+			grunt.task.run(phonegap);
+			break;
+		case 'dev':
+		default:
+			grunt.task.run([
+				'clean:dist',
+				'bower-install',
+				'useminPrepare',
+				'concurrent:dist',
+				'autoprefixer',
+				'concat',
+				'ngmin',
+				'copy:dist',
+				'cdnify',
+				'cssmin',
+				'uglify',
+				'rev',
+				'usemin',
+				'htmlmin'
+			]);
+			break;
+		}
+	});
 
   grunt.registerTask('default', [
     'newer:jshint',

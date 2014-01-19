@@ -1,0 +1,10 @@
+# ignore everything
+*
+
+# don't ignore these
+!.bowerrc
+!bower.json
+!package.json
+
+!dist/**
+!app.js
